@@ -1,0 +1,30 @@
+Todo list pour le rr0d
+
+$Id: TODO,v 1.6 2005-09-03 20:33:59 serpilliere Exp $
+
+- nettoyage du code (enlever les saletes genre oldMakefile et les
+fichiers de tests)
+
+- Probleme de rémanence des breakpoint dans le fichier: si le fichier cible est
+mappé en ram, le write en ram devient un write sur le fichier.
+(et la, ca le fait pas quand ta un putin de CC dans ta libc au redémarage..)
+	-> solution: hooker les le syscall exit?? (ca c'est kernel dépendant..)
+	donc pas bien pour rr0d.
+	
+
+
+- /!\ PROBLEME: Quand on quit rr0d, rendre les pages??? ou pas???
+
+- splash screen (en ascii art)
+
+- Gestion des breakpoints hardwares (exécution et acces R/W bus d'adresse.)
+
+- évaluator de commande (avec lex et yacc)
+
+- ajout de commandes plus fine (bpx 18:C0480120  ou meme r EAX=EAX+ecx*4 + @(esp+4), ...
+
+- h00k de l'interruption page fault et gestion des résidus de break point software
+
+
+- évaluation des mnémonic en mode trace pas a pas pour eviter les repositionnement arbitraire du trap flag de detection de debugguer, des cli, ...
+

@@ -1,0 +1,15 @@
+#
+# This file is part of the Rasta Ring 0 debug
+#
+# Copyright (C) 2004 Droids Corporation
+# http://www.droids-corp.org/
+#
+# $Id: Makefile-freebsd,v 1.6 2006-07-12 13:09:25 serpilliere Exp $
+#
+
+SRCS = breakpoint.c buffering.c command.c disasmbak.c idt.c keyboard.c page.c video.c import_symb.c utils.c module_freebsd.c core_rr0d.c pci.c
+KMOD = rr0d
+KO = ${KMOD}.ko
+KLDMOD = t
+
+.include <bsd.kmod.mk>

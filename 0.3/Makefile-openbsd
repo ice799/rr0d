@@ -1,0 +1,16 @@
+#
+# This file is part of the Rasta Ring 0 debug
+#
+# Copyright (C) 2004 Droids Corporation
+# http://www.droids-corp.org/
+#
+# $Id: Makefile-openbsd,v 1.6 2006-07-12 13:09:25 serpilliere Exp $
+#
+
+NOMAN =
+SRCS = utils.c breakpoint.c buffering.c command.c disasmbak.c idt.c keyboard.c page.c video.c Spy.c pci.c
+#OBJS=$(SRCS:.c=.o)
+LKM = rr0d
+BSDSRCDIR = /usr/src
+
+.include <bsd.lkm.mk>

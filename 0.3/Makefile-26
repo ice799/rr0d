@@ -1,0 +1,28 @@
+#
+# This file is part of the Rasta Ring 0 debug
+#
+# Copyright (C) 2004 Droids Corporation
+# http://www.droids-corp.org/
+#
+# $Id: Makefile-26,v 1.9 2006-07-12 13:09:25 serpilliere Exp $
+#
+
+EXTRA_CFLAGS +=  -O2 -Wall -DLINUX_26
+
+OBJ          := module_nux.o breakpoint.o buffering.o command.o disasmbak.o idt.o 
+OBJ          += keyboard.o page.o video.o utils.o import_symb.o core_rr0d.o pci.o
+MODULE       := rr0d.o 
+
+obj-m        := $(MODULE)
+rr0d-objs    := $(OBJ)
+
+default:
+	make -C /lib/modules/`uname -r`/build/ SUBDIRS=`pwd` modules
+
+clean:
+	rm -f  *.o .*.o.cmd .*.ko.cmd *.mod.c  *~ 
+	rm -rf .tmp_versions
+
+mrproper:
+	make clean
+	rm -f *.ko

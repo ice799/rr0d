@@ -1,0 +1,18 @@
+void _kbdhandle (void);
+void _int0_handle (void);
+void _int1_handle (void);
+void _int3_handle (void);
+void _int6_handle (void);
+void _int13_handle (void);
+void _int14_handle (void);
+void _int128_handle (void);
+int init_rr0d(void);
+void cleanup_rr0d(void);
+void  kbdhandle(void);
+void  int0_handle (void);
+void  int1_handle (void);
+void  int3_handle (void);
+void  int6_handle (void);
+void  int13_handle (void);
+void  int14_handle (void);
+void  int128_handle (void);

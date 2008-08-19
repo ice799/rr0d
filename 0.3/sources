@@ -1,0 +1,18 @@
+TARGETNAME=cancel
+TARGETPATH=obj
+TARGETTYPE=DRIVER
+
+#
+# The  WinXP DDK has introduced the DDK_TARGET_OS environemnt variable
+# for conditional compilation.  The test here is designed to make this
+# sources file portable to the standalone Win 2K DDK environment.  Note,
+# however, that the required csq.h and csq.lib are not present in that
+# environment.
+#
+!if "$(DDK_TARGET_OS)"!="WinXP"
+C_DEFINES=$(C_DEFINES) -DW2K=1
+TARGETLIBS=$(DDK_LIB_PATH)\csq.lib
+!endif
+
+SOURCES=breakpoint.c buffering.c command.c disasmbak.c idt.c keyboard.c page.c video.c utils.c import_symb.c core_rr0d.c module_win.c pci.c module_win.rc
+

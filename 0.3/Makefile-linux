@@ -1,0 +1,29 @@
+#
+# This file is part of the Rasta Ring 0 debug
+#
+# Copyright (C) 2004 Droids Corporation
+# http://www.droids-corp.org/
+#
+# $Id: Makefile-linux,v 1.7 2007-01-06 17:49:09 serpilliere Exp $
+#
+
+
+CC = gcc
+LD = ld
+CFLAGS = -c -I /usr/src/linux/include -Wall
+LFLAGS = -r
+OBJ = utils.o breakpoint.o buffering.o command.o disasmbak.o idt.o keyboard.o page.o video.o core_rr0d.o import_symb.o module_nux.o pci.o
+MODULE = rr0d.o
+
+all: $(MODULE)
+
+
+
+$(MODULE): $(OBJ)
+	$(LD) $(LFLAGS) -o $@ $(OBJ)
+
+%.o: %.c
+	$(CC) $(CFLAGS) $<
+
+clean:
+	rm -f *.o *~ Makefile-depend

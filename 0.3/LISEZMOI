@@ -1,0 +1,159 @@
+Rasta Ring 0 Debug
+Documentation utilisateur
+
+$Id: LISEZMOI,v 1.3 2004-09-30 18:12:47 lalet Exp $
+
+1. Compilation
+
+1.1 Sous Linux
+
+Vos sources du kernel (ou tout du moins les headers) sont installées
+et accessibles dans '/usr/src/linux'.
+
+Vous devez éditer le fichier 'config.h' sur l'exemple du fichier
+'config.h.sample'.
+
+Ce fichier doit commencer par :
+
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#define LINUX
+#define _asm_ __asm__ __volatile__
+
+Puis certaines valeurs. Pour obtenir l'adresse de votre Frame Buffer,
+utilisez les logs (soit avec la commande 'dmesg', soit dans le fichier
+'/var/log/kern.log'). Par exemple, utilisez :
+
+$ dmesg | grep -E "Framebuffer at 0x[0-9a-d]+, mapped to 0x[0-9a-d]+"
+Sep 1 21:03:01 godel kernel: sisfb: Framebuffer at 0xd0000000, mapped
+to 0xd001d000, size 8192k
+
+Dans notre exemple, la fin du fichier sera :
+
+#define SCREEN_ADRESSE 0xD001D000
+#define KEYB_INTER 0x21
+#define SCREEN_MAX_X 1024
+#define SCREEN_MAX_Y 768
+#define BYTE_PER_PIXEL 2
+#define SCREEN_X_OFFSET 0
+#define SCREEN_Y_OFFSET 0
+
+#endif /* CONFIG_H */
+
+La valeur de KEYB_INTER est directement liée au système d'exploitation
+(sous Linux, c'est 0x21). Sur la résolution, pas de remarque
+particulière. Sur la valeur de BYTE_PER_PIXEL, nous notons que cela
+interdit les valeurs de 24 bits entre autres. Enfin, les valeurs
+SCREEN_?_OFFSET conditionnent le placement de la fenêtre (ici en haut
+à gauche).
+
+Il faut ensuite choisir son Makefile. Pour Linux 2.4, faire 'cp
+Makefile-linux Makefile', et sous Linux 2.6, 'cp Makefile-26
+Makefile'.
+
+Puis lancer 'make'. Si ça n'a pas fonctionné, égorgez un beau poulet
+et répandez le sang de la pauvre bête sacrifiée encore chaude et
+agonisante sur le clavier et l'écran (et sur la souris si d'aventure
+vous en possédez une). Une fois les mauvais esprits éloignés,
+recommencez.
+
+1.2 Sous windows
+
+#ifdef XtreMiST
+Procurez-vous une distribution (on en trouve fréquemment dans
+certaines revues). Suivez les instructions d'installation, puis
+reportez-vous au 1.1.
+#endif
+
+Sous windows c'est beaucoup plus simple que sous linux, je tiens à le
+signaler : pour le fichier 'config.h', c'est tout pareil que sous nux,
+sauf que c'est un #define WINDOWS au lieu de LINUX.
+
+Pour trouver l'adresse l'adresse du frame buffer, c'est pas compliqué,
+vous devez désassembler votre driver video (note de l'XtreMiST : vous
+voyez que c'est plus simple que sous Windows). Ou plus simple, après
+avoir installé ceux-ci, lancez un test d'écriture mémoire vidéo, et
+tracez avec un debuggueur quelconque le code jusqu'a tomber sur
+l'écriture en mémoire video. Voila, c'est cuit; Bon appétit.
+
+Si vous n'avez pas de debuggueur, vous pouvez créer une image BMP,
+(j'insiste sur BMP) sous votre éditeur graphique préféré, c'est-à-dire
+Paint. L'image doit avoir une taille résonable (100*100). Peignez la
+en rouge, et sauvez l'image à la même résolution que votre écran
+(16bits par exemple); Editez l'image à l'aide d'un éditeur
+hexadécimal, et mettez dans la zone de stockage des pixel (c'est à
+dire APRES l'entete BMP) une chaine reconnaissable. par exemple, en
+heaxdécimal:
+"1337BEEFFACDEADCAFEBEEF1337C0FEC0FECAFE31337CAFEBEEFDEAD".
+
+Affichez l'image, avec votre éditeur graphique préféré, Paint, puis
+faite un programme/module qui parcour hexaustivement la mémoire pour
+trouver cette chaine. S'il ne trouve pas, vous pouvez tenter une
+adresse aléatoire et recommencer jusqu'à avoir un ama de pixel
+affiché. Si votre programme trouve la chaine, deja, bravo, vous savez
+programmer mieux qu'un cafard marin. Prenez cette adresse, tronquez à
+votre bon jugement de maniere à ce que le pixel extreme en haut a
+droite soit votre premier pixel. Et mettez cete valeur dans le
+config.h Si aucune de ces méthodes ne fonctionne, appelez un ami.
+
+
+2. Lancement
+
+2.1 Sous Linux
+
+Faites, en tant que root, 'insmod ./rr0d.o'. Vous avez chargé sans
+problème le module. Plus que jamais, soyez rasta et éloignez la haine
+de votre coeur.
+
+2.2 Sous Windows
+
+#ifdef XtreMiST
+Depuis le point 1.2, vous êtes sous Linux. Voyez donc la partie 2.1.
+#endif
+
+Ici encore, rien de bien compliqué, il suffit simlpement de faire une
+application appelant le driver rr0d.vxd. Pour cela, il faut écrire un
+programme de quelques lignes faisant un createfile sur le ficiher
+"\\.\rr0d.vxd" Attention, il faut que le programme ne ferme l'handle
+retourné qu'une fois les manipulations de rr0d terminées (note de
+l'XtreMiST : c'est vrai que c'est simlpe...).
+
+3. Arrêt
+
+3.1 Sous Linux
+
+En tant que root, exécutez 'rmmod rr0d'. Restez rasta.
+
+3.2 Sous Windows
+
+#ifdef XtreMiST
+On peut se tutoyer ? T'es lourd. T'es sous Linux maintenant, voir 3.1.
+#endif
+
+Faite faire un closehandle sur rr0d.
+
+4. Utilisation
+
+Pour l'instant, pour pouvoir utiliser rr0d, il faut que le programme à
+débugguer fasse lui-même une interruption 3. Introduisez simplement
+dans votre code :
+
+__asm("int $0x3;");
+
+A partir de là, vous pouvez utiliser les commandes suivantes :
+
+ - BL: liste des break-points ;
+ - BPX <ADRESSE>: place un break-point à l'adresse donnée ;
+ - BC <NUM>: efface le break-point <NUM> ;
+ - F8: avance d'une instruction (le 'step' de gdb)
+ - F10: recule d'une instruction. Non, je déconne. Comme F8, mais ne suit
+   pas les instructions 'call' (le 'next' de gdb).
+ - F12: avance jusqu'au prochain break-point (le 'cont' de gdb, un peu
+   comme le Duc de Bourgogne. Ne me remerciez pas, ça me fait plaisir).
+
+Commandes avancées (utilisateurs expérimentés seulement) :
+ - HELP: affiche une aide très utile ;
+ - DROIDS: affiche une information très utile ;
+ - RASTA: passage en mode RASTA ; c'était le mode utilisé par Bob Marley
+   quand il a mangé WinZip 0.71.

@@ -1,0 +1,221 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[english, french]{babel}
+
+\usepackage[latin1]{inputenc}
+\usepackage[dvips]{graphics}
+
+
+
+
+%% Titre du document
+\title{Documentation technique de RR0D}
+\author{DESCLAUX Fabrice }
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% D\'ebut du document
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\maketitle
+
+
+\pagebreak
+
+%Si on veut compiler en anglais :
+\selectlanguage{french}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Corps du Document
+
+\section{Introduction}
+Le Rasta Ring 0 debugger est un debugger noyau multi-syst\`emes. L'id\'ee principale de ce projet est de d\'evelopper un debugger assez bas niveau permettant ainsi de garder un code unique pour plusieurs syst\`emes d'exploitations (linux, win98, win XP, *BSD). L'incov\'enient de d\'evelopper cet outil est donc qu'il est fait pour un mat\'eriel d\'efini: il ne tourne que sur l'architecture x86. L'un des buts recherch\'e par RR0D est de proposer un outils assez puissant pour debugger tout type de code (user/kernel land). Le deuxi\`eme but de RR0d est de comprendre les m\'ecanismes mis en oeuvre par les syst\`emes debugger. 
+
+%% TODO changer ce tire de merde.
+\section{Binaire de RR0D}
+La solution retenue permettant d'offrir à RR0D un acc\'es au niveau privil\'egi\'e du processeur est de le d\'evelopper sous forme de pilote. La plupart des syst\`emes d'exploitations vis\'es par RR0D poss\`edent un m\'ecanisme permettant de charger un module/driver de mani\`ere simple. Le code d\'efinissant un module n'est pas fondamentalement diff\'erent d'un syst\`eme d'exploitation à un autre. Seules quelques en-têtes de fonctions sont modifi\'ees.
+
+Un des avantages à être un driver dynamique est que RR0D peut être charg\'e/d\'echarg\'e à la vol\'ee, sans rebooter la machine.
+
+\section{Code de RR0D}
+Les syst\`emes d'exploitation cibl\'es par RR0D utilisent des styles diff\'erents ({\em Intel style} et {\em AT\&T style}). Cela explique pourquoi les parties de code \'ecrites en assembleur sont r\'edig\'ees en double, dans les deux styles. 
+
+\section{Lancement de RR0D}
+Lorsqu'on charge RR0D, celui-ci installe plusieurs points d'encrage de diverses natures permettant d'int\'eragir avec le syst\`eme. 
+\subsection{Table de description des interruptions}
+La premi\`ere famille s'attache à la table de description des interruptions. Les entr\'ees modifi\'ees sont celles:
+%% TODO liste des int à mette à jour.
+\begin{itemize}
+\item{du clavier}
+\item{de la division par z\'ero}
+\item{de l'interruption {\em pas à pas}}
+\item{de l'interruption point d'arrêt}
+\end{itemize}
+
+RR0D \'etant en court de d\'eveloppement, cette liste n'est bien sûr pas d\'efinitive: l'interruption de d\'efaut de page, d'exception de privil\`ege,... devront être prises en charge.
+
+
+Chaque interruption peut être g\'er\'ee de deux mani\`eres dans RR0D: soit il traite l'interruption, et acquittera le contrôleur d'interruption. D\`es lors, le syst\`emes d'exploitation n'aura pas eu vent de cette interruptions. Si rr0d n'acquitte pas le contrôleur d'interruption, (c'est à dire ne traite pas l'interruption) elle sera prise en charge par le syst\`eme d'exploitation.
+
+Ce principe permet par exemple à RR0D de r\'ecupp\'erer une division par z\'ero, une faute de page, ...
+
+
+\begin{figure}[htbp]
+\centering
+\scalebox{0.4}{ \includegraphics{fig/install_RR0D.eps} }
+\end{figure}
+
+
+\paragraph{Interruption clavier}
+Il est à noter que le num\'ero de l'interruption ex\'ecut\'ee lorsqu'une touche est pr\'ess\'ee n'est pas la même sur les diff\'erents syst\`emes d'exploitations. Actuellement, le point d'encrage du clavier g\`ere uniquement les mod\`ele de type PS2. Comme RR0D prend la main sur le syst\`eme lors de son lancement, il a \'et\'e n\'ecessaire de coder un mini driver de clavier (celui du syst\`eme n'ayant à ce moment plus la main). 
+
+Ce driver poss\`ede deux \'etats diff\'erents: le premier, est le mode monitoring. Le but est de rendre la main au syst\`eme d'exploitation pour que celui-ci traite la touche comme si le point d'encrage n'existait pas. Par contre, toutes les touches pr\'ess\'ees sont scrut\'ees dans le but de d\'eterminer si le raccourci clavier permettant d'activer la console de RR0D est pr\'ess\'e.
+
+Le deuxi\`eme mode, est actif lorsque la console de RR0D est activ\'ee (par le clavier, ou bien par une interruption prise en charge par RR0D). Ce mode traite toute les touches tapp\'ees, et ne les passe pas au syst\`eme d'exploitation. Seul RR0D interpr\`etera ces touches. 
+
+\paragraph{Interruption 0: Division par z\'ero, ...}
+Ces interruptions sont des interruptions d\'echenchant potentiellement la console de RR0D. Ainsi, lorsqu'une division par z\'ero est faite, (et que RR0D est lanc\'e) RR0D prendra la main, à l'endroit ayant d\'eclench\'e la faute. 
+
+
+\paragraph{interruption 1: Mode pas à pas}
+L'interruption 1 est prise en charge par RR0D dans le but de g\'erer le mode pas à pas. Celui-ci est activ\'e en positionnant le bit {\em trap flag} du registre eflag. Dans ce mode, l'interruption 1 est d\'eclench\'ee apr\'es chaque ex\'ecution d'instruction. 
+
+L'interruption 1 peut être \'egalement d\'echench\'ee par un point d'arrêt mat\`eriel (Hardware Break Point). Nous le verrons leur principe dans le paragraphe les d\'ecrivant.
+
+Une autre posibilit\'e est que l'interruption 1 soit d\'eclench\'ee par l'ex\'ecution du mn\'emonic d\'edi\'e {\em int 1}.
+
+Ces diverses possibilit\'es doivent être prises en compte par l'automate d'\'etat g\'erant l'interruption 1.
+
+
+\paragraph{interruption 3: point d'arrêt}
+L'interruption 3 est ex\'ecut\'ee lorsque le mn\'emonic d\'edi\'e {\em int 3} est ex\'ecut\'e. Elle est utilis\'ee dans le but d'installer des point d'arr\'et arbitraire dans le code cibl\'e.
+
+%% TODO liste des int a finir
+\paragraph{interruption 14: D\'efaut de page}
+Cette interruption est ex\'ecut\'ee quand un d\'efaut de page à lieu. 
+
+
+\subsection{Gestion de l'affichage}
+RR0D poss\`ede deux modes diff\'erents d'affichage. Le premier mode est bas\'e sur un mini driver de carte graphique compatible VGA. Ce mode {\em console} est principalement utilis\'e pour linux, *BSD. La plupart des cartes graphique poss\`edent un mode compatible VGA. Celui-ci est acc\'essible en \'ecrivant à l'adresse physique qui lui est r\'eserv\'ee (0xB8000). Il est compos\'e de 80*25*2 octets. En effet un carat\`ere à l'cran est d\'ecrit par 2 octets: Un repr\'esente le caract\`ere à afficher, l'autre ses attributs (couleur, surbrillant, soulign\'e, clignotant...). La seule difficult\'ee technique li\'ee à l'utilisation de ce mode est de savoir \'ecrire à l'adresse physique B8000. 
+
+Heureusement, la plupart des syst\`emes d'exploitation mappent à l'identit\'e les premiers m\'ega-octets des adresses linaires à partir de 0xC0000000 sur l'adresse physique 0x00000000. Ainsi, \'ecrire à l'adresse lin\'eaire 0xC00B8000 revient à \'ecrire à l'adresse physique 0xB8000, et donc dans la m\'emoire vid\'eo d'une carte VGA.
+
+Cette adresse de mapping est d\'ependante du syst\`eme d'exploitation: ainsi, elle est situ\'ee en 0xD0000000 sur certains BSD, ...
+
+Le deuxi\`eme mode d'affichage de RR0D est bas\'e sur le principe de frame-buffer. Certains syst\`emes d'exploitation mappent la m\'emoire vid\'eo de la carte graphique sur une certaine zone m\'emoire lin\'eaire. Ecrire dans cette zone m\'emoire revient à \'ecrire dans la m\'emoire vid\'eo de la carte, et donc d'\'echanger les pixels à l'\'ecran.  Ce mode poss\`ede des avantage et des inconv\'enients. Les avantages sont que RR0D g\`ere les modes graphique: il apparaît alors en sur-impression, comme une fenêtre (presque) classique. Utiliser ce mode est simple: il faut uniquement activer le frame buffer sur le syst\`eme. Bien que RR0D ne g\`ere à l'heure actuelle qu'une police peu est\'etique, il peut potentiellement g\'erer un affichage 32 bit 1600x1200. Les inconv\'enients sont qu'il faut se d\'ebrouiller pour trouver l'adresse lin\'eaire de la zone m\'emoire. (on peut la trouver de mani\`ere empirique sur win98, ...)
+
+
+
+On peut voir en \'etudiant les points d'encrages que le syst\`eme d'exploitation n'est pas modifi\'e de mani\`ere trop agr\'essive. Cela permet d'enlever RR0D du syst\`eme à la vol\'ee.
+
+
+%% TODO ca aussi c'est de la merde.
+\section{RR0D: les probl\`emes}
+\subsection{Manipulation de la m\'emoire}
+La manipulation de la m\'emoire est un point d\'elicat. G\'en\'erer un d\'efaut de page en ring 0 a en g\'en\'eral pour cons\'equence un plantage, si ce n'est un reboot de la machine. Pour \'eviter ces d\'esagr\'ement, RR0D tente de tester si les adresses lin\'eaires manipul\'ees sont valables. Pour cela, RR0D utilise le syst\`eme de pagination des x86. Mais cela n'est pas chose facile: en th\'eorie, le r\'epertoire de tables de pages est acc\'essible grâce au registre CR3. Celui-ci contient l'adresse physique de ce r\'epertoire. Le probl\`eme est qu'une application, (y compris RR0D) manipulent des adresses lin\'eaires. 
+
+Un d\'ebut de solution utilis\'ee dans RR0D est d'utiliser le mapping des adresse physiques basses, de la même façon que nous le faisons pour adresser la carte vid\'eo. Nous avons vu que la plupart des syst\`emes d'exploitation mappent à l'identit\'e les adresses basses physiques sur une adresse lin\'eaire connue. Sur les syst\`emes windows et linux, le r\'epertoire de table de pages est justement situ\'e dans cette zone basses: On peut donc y acc\'eder en manipulant l'adresse lin\'eraire 0xC0000000 + CR3. A partir de la, RR0D peut parcourir l'arbre des pages et d'en d\'eduire les informations sur les adresses manipul\'ees. 
+
+Par contre, sur les syst\`emes *BSD, l'adresse physique du r\'epertoire de table de pages (CR3) n'est pas situ\'e dans les quelques m\'ega-octets de m\'emoire basse mapp\'ee par le syst\`eme d'exploitation. On ne peut donc pas y acc\'eder par le même principe. 
+%%TODO la vrai solution...
+
+\begin{figure}[htbp]
+\centering
+\scalebox{0.4}{ \includegraphics{fig/pagination.eps} }
+\end{figure}
+
+
+
+\subsection{Mise en place des breakpoints}
+La mise en place des breakpoints {\em software} se fait de la mani\`ere suivante: on remplace le mn\'emonic de l'adresse lin\'eaire sur laquelle on d\'esire installer le breakpoint par le {\em int 3}, c'est à dire l'octet 0xCC.
+
+Mais cela n'est pas sans cons\'equences. Ecrire des octets dans une zone m\'emoire peut poser les probl\`emes suivants: quand un binaire/librairie est en m\'emoire, celle-ci a \'et\'e charg\'ee grâce à l'appel syst\`eme {\em map}. D\`es lors, si la m\'emoire est partag\'ee, toute \'ecriture dans la m\'emoire revient, lors d'une synchronisation disque, à \'ecrire sur le disque. En r\'esum\'e, si un utilisateur pose un breakpoint, le laisse en m\'emoire, et que le binaire se termine, le syst\`eme d'exploitation fera alors une synchronisation disque, et \'ecrira le breakpoint (l'octet 0xCC) sur le disque dur!
+
+\begin{figure}[htbp]
+\centering
+\scalebox{0.4}{ \includegraphics{fig/pose_breakpoint.eps} }
+\end{figure}
+
+
+
+
+\paragraph{Hook de la synchronisation disque}
+Une id\'ee venant à l'esprit serait d'installer des hook sur les appels syst\`emes qui unmappent les processus. Pour r\'esumer, RR0D pourrait placer des points d'encrage dans ces appels syst\`emes, pour être inform\'e qu'un processus va-t-être tu\'e. La, RR0D v\'erifierait si aucun breakpoint n'est pr\'esent dans une des page du processus. Si oui, l'ancien octet \'ecras\'e par le mn\'emonic du breakpoint serait remis en place.
+
+Cette solution apparemment efficace se r\'ev\`ele {\em tr\'es} d\'ependante du syst\`eme d'exploitation: il est tr\'es facile de hooker l'appel syst\`eme unmap sous linux par exemple, mais la chose se corse sous un windows. Cette solution obligerait donc à \'ecrire une version du code par syst\`eme d'exploitation.
+
+\paragraph{Subtilisation de page physique}
+Le m\'ecanisme de pagination permet de d\'eterminer la page physique associ\'ee à une adresse lin\'eaire donn\'ee. L'id\'ee ici est de remplacer la page physique contenant le futur breakpoint par une page physique dupliqu\'ee, mais appartenant à RR0D (en prenant garde à lui donner les attributs de page convenable). Pour cela, on r\'edirige l'entr\'ee de la table des pages correspondante à la page vis\'ee par l'adresse physique d'une page de RR0D. RR0D copie alors le contenu de la page source dans celle de la page de remplacement, puis, y ins\`ere le breakpoint. Ainsi, la page physique du processus n'est jamais modifi\'ee. 
+
+Ce principe fonctionne correctement sur certains syst\`emes. Linux 2.4* par exemple, ne s'apperçoit plus de l'\'ecriture dans le processus, et d\'emappe celui-ci sans \'ecrire le breakpoint sur le disque. 
+
+Malheureusement, Linux 2.6* ne supporte pas ce syst\`emes. Il plante lors du d\'emappage du processus. Apparemment, la nouveaut\'e de reverse-mapping apport\'ee au Manager de M\'emoire Virtuelle sous les 2.6 d\'etecte la substitution de ces pages physiques.
+
+\paragraph{Modification des attributs de pages physiques}
+Le principe ici abord\'e d\'ecoule de la question suivante: comment le syst\`eme se rent-il compte que la page physique est modifi\'ee? 
+
+La structure permettant de g\'erer la pagination associe à chaque page physique des attributs: lecture/\'ecriture, user/kernel land, ... Un des attributs notamment appel\'e le {\em Dirty Bit}. Ce bit est mis à un par le processeur lui-même lorsqu'une \'ecriture est faite sur la page. Il n'est jamais \'eteint par le mat\'eriel. Ainsi, le syst\`emes d'exploitation peut utiliser ce bit plus tard dans le but de savoir si la page doit être synchronis\'ee ou non. La, il peut \'eteindre à nouveau le bit, et ainsi de suite pour les future synchronisations.
+
+Ce principe est utilis\'e par les syst\`emes d'exploitation, souvent coupl\'e avec leprincipe de {\em copy-on-write}. Le but ici est une question d'optimisation de la m\'emoire. Lorsqu'une page est mise en m\'emoire, ses attributs sont mis en lecture seule (même si celle-ci devait en th\'eorie être en lecture/\'ecriture). D\`es lors, si pour une quelconque raison, un autre processus doit charger cette page, le syst\`eme utilisera cette premi\`ere page. Elle est donc partag\'ee entre plusieurs processus. Par contre, si un processus \'ecrit dans cette page, un exception sera lev\'ee et intercept\'ee par le syst\`eme d'exploitation. Celui-ci dupliquera alors la page pour en faire une copie {\em priv\'ee} pour le processus. Le syst\`eme change alors les droits de cette page en lecture \'ecriture pour permettre au processus d'\'ecrire sans probl\`eme dans cette copie de page. 
+
+Pour mettre un breakpoint sans que le syst\`eme ne soit inform\'e de l'\'ecriture dans la page du processus, il faut donc \'eviter ces 2 syst\`emes. Pour \'eviter un d\'efaut de page, le bit {\em write protect} est pass\'e à un, et les attributs de la page sont modifi\'es en lecture \'ecriture pour ne pas d\'eclench\'e le m\'ecanisme de copy-on-write. La, le breakpoint est \'ecrit. Pour finir, le {\em Dirty Bit} est remis à 0. 
+
+Malgr\'es toutes ces pr\'ecautions prises dans le but de masquer au syst\`eme que la page a \'et\'e modifi\'e, et donc qu'il n'a pas besoin de la mettre à jour sur le disque, les breakpoint sont \'ecrits lors du d\'echargement du processus vis\'e. Pourquoi?
+%%TODO pourkoi?
+
+
+
+\section{Fonctionnalit\'es de RR0D}
+\subsection{Interpr\'eteur de commande}
+A l'heure actuelle, l'interpr\'eteur de commande est bas\'e sur un automate d'\'etat. Son syst\`eme est donc relativement limit\'e. Une am\'elioration possible serait l'utilisation de Lex/Yacc permettant des commandes plus pouss\'ees.
+
+\subsection{Import de symboles}
+Un importeur de symbole est une chose relativement d\'ependante du syst\`eme d'exploitation. Ainsi, il a \'et\'e d\'ecid\'e de ne pas directement l'inclure dans le code de RR0D proprement dit. Le principe du gestionnaire des symboles est de laisser une application userland se charger de cr\'eer une table comprenant les informations des symboles à g\'erer. Puis par un syst\`eme de communication r\'ealis\'e par le lancement d'une interruption d\'edi\'e, ou par le d\'eclenchement d'une exception, RR0D copierait cette zone m\'emoire dans ses propres donn\'ees. Ainsi, seul le code userland serait d\'ependant du syst\`eme d'exploitation. 
+
+Ceux-ci sont donc par cons\'equent tr\'es facile à r\'ealiser: Sous windows, un simple {\em loadlibrairy} sur les librairies à importer, suivi de {\em GetProcAddress} permettant de r\'ecup\'erer l'adresse des fonctions vis\'ees. Le même principe peut être utilis\'e sous Linux...
+
+Ce principe parait assez simple au premier abord. Le probl\`eme est qu'avec ce syst\`eme, nous avons les adresses associ\'ees aux nom de fonctions de la librairie, certe, mais les adresses vues par le processus qui les a r\'eclam\'e (ici, notre {\em symbol loader}. Le probl\`eme vient du fait que les librairies partag\'ees peuvent mapp\'ees à des adresse linaires diff\'erentes pour chaque processus. Deux processus peuvent donc tr\'es bien utiliser la même fonction de la même librairie, mais voir cette fonctions avec deux adresse lin\'eaires diff\'erentes. 
+
+Un d\'ebut de solution à ce probl\`eme serait d'utiliser l'adresse physique des symboles, et non leur adresse lin\'eaire. Comme nous l'avons vu, une page physique est souvent partag\'ee par plusieurs processus (et surtout dans le cas des librairies partag\'ees...). En th\'eorie, tant que le processus n'\'ecrit pas dans une zone m\'emoire d'un symbole, la page physique le contenant sera la même. L'adresse physique du symbole sera donc identique.
+
+
+\subsection{Scripts et autres joyeuset\'es}
+Il serait int\'eressant d'inclure un syst\`eme de script dans RR0D lui permettant de r\'ealiser certaines taches exhaustives. (d\'etecteur/\'elimination euristique de code offusqu\'e, d\'etecteur anti-RR0D, d\'epacker de binaires, ...)
+
+\section{Les choses à faire}
+RR0D est à l'heure actuelle en cours de d\'eveloppement. Il est donc à ce titre incomplet et instable. 
+
+Le gestionnaire de clavier PS2 est interf\'er\'e par tout mouvement de sourie. 
+
+Le testeur de pr\'esence de page m\'emoire est absent sous les BSD (les ptd se trouvant dans une zone non accessible facilement), entraînant une casquade de bug plus ou moins critiques. 
+
+Les breakpoint software resteront pr\'esent sur le disque si le processus/librairie manipul\'es quittent. (assez g\'enant)
+
+L'importeur de symbole se base sur les adresses lin\'eaire, et donc est incorrect sur Linux. 
+
+Le parseur de commande est assez pauvre et plante sur certaines entr\'ees. 
+
+Des bugs graphiques sont pr\'esents dans la manipulation du frame-buffer ET dans la manipulation de la carte vid\'eo VGA. 
+
+Seul un breakpoint hardware sur 4 est g\'er\'e (mal).
+
+Le moteur de d\'esassemblage (et de remont\'e) de code est {\em tr\'es} pauvre.
+
+Bref, l'utilisation de RR0D est pour le moment assez d\'elicate, voire dangereuse.
+
+\subsection{Gestion de la m\'emoire correcte}
+\subsection{Am\'elioration de l'interpr\'eteur de commande}
+\subsection{Table de symbole}
+
+
+\section{Conclusion}
+RR0D, ca r0x0r.
+
+\begin{thebibliography}{10}
+
+\bibitem{pouet}  r4diaT0r, razor 1911 {\em pouet pouet}
+
+\end{thebibliography}
+
+\end{document}

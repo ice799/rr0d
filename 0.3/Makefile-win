@@ -1,0 +1,92 @@
+#****************************************************************************
+#                                                                           *
+# THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY     *
+# KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE       *
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR     *
+# PURPOSE.                                                                  *
+#                                                                           *
+# Copyright 1993-95  Microsoft Corporation.  All Rights Reserved.           *
+#                                                                           *
+#****************************************************************************
+
+!ifdef MASTER_MAKE
+BUILD_BITS=32
+BUILD_TYPE=base
+!INCLUDE $(DDKROOT)\master.mk
+!endif
+
+CFLAGS     = -DWIN32 -DCON -Di386 -D_X86_ -D_NTWIN -W3 -Gs -D_DEBUG -Zi
+CVXDFLAGS  = -Zdp -Gs -c -DIS_32 -Zl -DDEBLEVEL=1 -DDEBUG
+LFLAGS     = -machine:i386 -debug:full -debugtype:cv /PDB:BIN\SPY.PDB -subsystem:console kernel32.lib user32.lib shell32.lib libc.lib
+AFLAGS     = -coff -DBLD_COFF -DIS_32 -W2 -Zd -c -Cx -DMASM6 -DDEBLEVEL=1 -DDEBUG
+
+all: direxist bin\SpyExec.exe bin\Spy.vxd
+
+direxist:
+        if not exist bin\nul    md bin
+
+bin\Spy.obj: Spy.c
+        cl $(CVXDFLAGS) -Fo$@ %s
+
+bin\video.obj: video.c
+        cl -c -Fo$@ %s
+
+bin\idt.obj: idt.c
+        cl -c -Fo$@ %s
+
+bin\keyboard.obj: keyboard.c
+        cl -c -Fo$@ %s
+
+bin\buffering.obj: buffering.c
+        cl -c -Fo$@ %s
+
+bin\disasmbak.obj: disasmbak.c
+		cl -c -Fo$@ %s
+
+bin\page.obj: page.c
+		cl -c -Fo$@ %s
+
+bin\command.obj: command.c
+		cl -c -Fo$@ %s
+
+bin\breakpoint.obj: breakpoint.c
+		cl -c -Fo$@ %s
+
+bin\pci.obj: pci.c
+		cl -c -Fo$@ %s
+
+bin\SpyAsm.obj: SpyAsm.asm
+        F:\masm32\BIN\ml $(AFLAGS) -Fo$@ %s
+
+bin\Spy.vxd: bin\Spy.obj bin\video.obj bin\idt.obj bin\keyboard.obj bin\buffering.obj bin\disasmbak.obj bin\page.obj bin\command.obj bin\breakpoint.obj bin\SpyAsm.obj Spy.def
+        echo >NUL @<<Spy.crf
+-MACHINE:i386 -DEBUG:FULL -PDB:BIN\Spy.PDB
+-DEF:Spy.def -OUT:bin\Spy.vxd -MAP:bin\Spy.map
+-VXD bin\Spy.obj bin\video.obj bin\idt.obj bin\keyboard.obj bin\buffering.obj bin\disasmbak.obj bin\page.obj bin\command.obj bin\breakpoint.obj bin\SpyAsm.obj libc.lib
+<<
+        F:\fd\dem\98DDK\bin\link @Spy.crf
+        cd bin
+        mapsym Spy
+        cd ..
+
+bin\SpyExec.obj: SpyExec.c 
+        cl $(CFLAGS) -c -Fo$@ %s
+
+bin\SpyExec.exe: bin\SpyExec.obj
+        echo >NUL @<<SpyExec.crf
+$(LFLAGS)
+-PDB:BIN\SpyExec.PDB -OUT:bin\SpyExec.exe -MAP:bin\SpyExec.map bin\SpyExec.obj
+<<
+        F:\fd\dem\98DDK\bin\link @SpyExec.crf
+
+clean:
+		-@del bin\*.obj
+		-@del bin\*.vxd
+		-@del bin\*.exe
+		-@del bin\*.exp
+		-@del bin\*.map
+		-@del bin\*.sym
+		-@del bin\*.lib
+		-@rd  bin
+		-@del *.pdb
+        

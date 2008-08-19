@@ -1,0 +1,152 @@
+Rasta Ring 0 Debug
+User documentation
+
+$Id: README,v 1.2 2006-07-18 08:13:30 serpilliere Exp $
+
+
+1. Compiling
+
+NOTE:
+rr0d as 3 graphic modes:
+* A console mode (for unix, bsd & co)
+* A frame buffer mode (using the X framebuffer if you activated it in your kernel)
+* An automatic graphic video mode (pci & agp card)
+
+I advice you to select the 3rd mode. here is the configuation to active in the config.h:
+/* we want a graphic mode */
+#define VIDEO_FB
+/* we want direct hardware writtng */
+#define HW_FB
+/* we want rr0d to find automatically the address of the video hardware */
+#define AUTO_HW_FB
+/* we set a default value... */
+#define SCREEN_ADRESSE 0xF0000000
+
+but erf, it doesn't seem to detect vmware driver...
+
+1.1 Linux
+
+The (current) kernel sources (or at least headers) must be accessible
+by '/usr/src/linux'.
+
+You must create and edit the file 'config.h' using the example
+'config.h.sample'.
+
+This file must begin with :
+
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#define LINUX
+
+
+Then if you want to use your native frame buffer, you must choose
+between '#define VIDEO_FB' (in this case, you *must* have an active
+kernel frame buffer) or '#define VIDEO_AA' (the console mode).
+
+If you want 'VIDEO_FB', you must set SCREEN_ADRESSE to the frame
+buffer address. To get that value, you can use either the
+'/var/log/kern.log' file or the 'dmesg' command. For example :
+
+$ dmesg | grep -E "Framebuffer at 0x[0-9a-d]+, mapped to 0x[0-9a-d]+"
+Sep 1 21:03:01 godel kernel: sisfb: Framebuffer at 0xd0000000, mapped
+to 0xd001d000, size 8192k
+
+In this case, you will have :
+
+#define SCREEN_ADRESSE 0xD001D000
+
+The next statments are easy to understand :
+
+#define SCREEN_MAX_X 1024
+#define SCREEN_MAX_Y 768
+#define BYTE_PER_PIXEL 2
+#define SCREEN_X_OFFSET 0
+#define SCREEN_Y_OFFSET 0
+
+
+
+The keyboard interrupt :
+
+#define KEYB_INTER 0x21
+
+And your compiler ASM style (with gcc, ATT) :
+#define ATT_ASM
+
+#endif /* CONFIG_H */
+
+You now have to choose the Makefile. If you are running Linux 2.4, run
+'cp Makefile-linux Makefile', and with Linux 2.6, 'cp Makefile-26
+Makefile'.
+
+Then just run 'make'. If this does not work, try to cut the throat of
+a chicken and to spread the warm blood on your keyboard and your
+screen (and on your mouse if you have one). Then try again.
+
+1.2 Under Windows
+
+Decomment the:
+#define WIN32 
+#define KEYB_INTER 0x51 
+
+So, use the automatic video driver:
+/* we want a graphic mode */
+#define VIDEO_FB
+/* we want direct hardware writtng */
+#define HW_FB
+/* we want rr0d to find automatically the address of the video hardware */
+#define AUTO_HW_FB
+/* we set a default value... */
+#define SCREEN_ADRESSE 0xF0000000
+
+
+Thus, rr0d will scan your pci bus and try to find by itself your
+graphic card
+
+2. Launching
+
+2.1 Linux
+
+As root, run 'insmod ./rr0d.o'. You have just loaded the module
+without any problem. Now be rasta and keep any hatred feeling far from
+your heart.
+
+2.2 Windows
+
+Compile the driver_loader.c and launch it. A console will popup,
+launch rr0d and wait for you.
+
+3. Arrêt
+
+3.1 Sous Linux
+
+As root, just run 'rmmod rr0d'. But keep rasta.
+
+3.2 Sous Windows
+
+Now, press enter in the console, it will stop rr0d
+
+4. Using
+
+For now, to be able to use rr0d, the program has to call int 3
+itself. Just add in your code :
+
+__asm("int $0x3;");
+
+Now, you can use the following commands :
+
+ - BL: list the breakpoints ;
+ - BPX <ADDRESS>: add a breakpoint at <ADDRESS> ;
+ - BC <NUM>: delete breakpoint <NUM> ;
+ - F8: run one ASM instruction (equivalent to gdb 'step')
+ - F10: just like F8, but does not follow the 'call' instructions
+   (equivalent to gdb 'next') ;
+ - F12: run until next breakpoint (equivalent to gdb 'cont').
+
+Advanced commands (use with extreme caution) :
+ - HELP: display a very usefull help ;
+ - DROIDS: display a very important information ;
+ - RASTA: run into RASTA mode ; this was the mode used by Bob Marley when
+   he cracked WinZip 0.71;
+ - UNRASTA: do never use this command unless you *really* know what you are
+   doing.
