@@ -10,19 +10,13 @@
  *
  */
 
-#define __KERNEL__
-#define MODULE
-
-#include <linux/modversions.h>
 
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/fb.h>
-#include <video/fbcon.h>
 
 int init_module()
 {
-  MODULE_LICENSE("GPL");
 
   /* 0 est le mineur de /dev/fb0 */
   struct fb_info *info = registered_fb[0];
@@ -30,7 +24,7 @@ int init_module()
   int i;
 #endif
 
-  printk("fb is at 0x%X\n", (unsigned int) info->disp->screen_base);
+  printk("fb is at 0x%X\n", (unsigned int) info->screen_base);
 
 #if 0
   for (i=0; i<1024*3; i+=2) {
@@ -42,7 +36,7 @@ int init_module()
   return 0;
 }
 
-int cleanup_module()
+void cleanup_module()
 {
-  return 0;
+  return ;
 }
