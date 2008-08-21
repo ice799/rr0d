@@ -24,6 +24,11 @@ int init_module()
   int i;
 #endif
 
+  if (info == NULL) {
+    printk("No registered framebuffers!\n");
+    return 0;
+  }
+
   printk("fb is at 0x%X\n", (unsigned int) info->screen_base);
 
 #if 0
