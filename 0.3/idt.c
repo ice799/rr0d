@@ -10,64 +10,61 @@
 
 #include "vars.h"
 #include "idt.h"
-
 #include "var_globale.h"
-
 #include "buffering.h"
 #include "utils.h"
+#include <types.h>
 
-/*trouve l'adresse de l'idt                       */
-
-unsigned int* getbaseidt(void)  
-{
-
+/**
+ *  get_idt: returns the idt base address for x86
+ *
+ *  @returns idt base address
+ */
+u32 *
+idt_base(void) {
+  IDTR idtr;
 #if defined(__GNUC__)
-  _asm_("sidt idt_");
+  _asm_("sidt idtr");
 #elif defined(_MSC_VER)
-  __asm{ sidt idt_ };
+  __asm{ sidt idtr };
 #endif
 
-  idt_[0]=(idt_[0]>>16);
-  idt_[1]=(idt_[1]<<16);
-  idt_[0]=(idt_[0]|idt_[1]);
-
-  return (unsigned int*)idt_[0];
+  return (u32 *)idtr.base;
 }
 
-
-unsigned int* getbasegdt(void)  /* Get the linear address for GDT */
-{
+/**
+ * gdt_base: returns the gdt base address for x86
+ *
+ * @returns gdt base address
+ */
+u32 *
+gdt_base(void) {
+  GDTR gdtr;
 #if defined(__GNUC__)
-  _asm_("sgdt gdt_");
+  _asm_("sgdt gdtr");
 #elif defined(_MSC_VER)
-  __asm{ sgdt gdt_};
+  __asm{ sgdt gdtr};
 #endif
 
-
-  gdt_[0]=(gdt_[0]>>16);
-  gdt_[1]=(gdt_[1]<<16);
-  gdt_[0]=(gdt_[0]|gdt_[1]);
-
-  return (unsigned int*)gdt_[0];
-
-};
-
-
-
-unsigned int getbaseldt(void)  
-{
-	
-#if defined(__GNUC__)
-  _asm_("sldt ldt_\n");
-#elif defined(_MSC_VER)
-  //ARARAAAA mettre.
-  //  __asm{    sldt ldt_      };
-#endif
-
-
-  return ldt_[0];
+  return (u32 *)gdtr.base;
 }
 
+/**
+ * ldt_base: returns the ldt base address for x86
+ *
+ * @returns the ldt base address
+ */
+u32 *
+ldt_base(void) {
+  LDTR ldtr;
+#if defined(__GNUC__)
+  _asm_("sldt ldtr");
+#elif defined(_MSC_VER)
+  __asm{ sldt ldtr };
+#endif
+
+  return (u32 *)ldtr.base;
+}
 
 unsigned int translate_logic_to_linear(unsigned int segment, unsigned int adresse)
 {
