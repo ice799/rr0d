@@ -11,11 +11,6 @@ void  visualise_idt(unsigned long *);
 unsigned long modifie_idt(unsigned int ,unsigned int *);
 unsigned long read_idt_entry(unsigned int *);
 
-union descriptor {
-  struct gate_descriptor gd;
-  struct segment_descriptor sd;
-};
-
 struct segment_descriptor {
   unsigned limit0:16;
   unsigned base0:24;
@@ -75,6 +70,11 @@ static inline u32 gd_type(struct gate_descriptor *gd) {
 static inline u32 gd_selector(struct gate_descriptor *gd) {
   return (gd->selector);
 }
+
+union descriptor {
+  struct gate_descriptor gd;
+  struct segment_descriptor sd;
+};
 
 typedef struct {
   u16 limit;
