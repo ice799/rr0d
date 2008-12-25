@@ -93,5 +93,11 @@ typedef struct {
 
 #define IDT_MAX (0xFF)
 
+#define DT_TSS      0x9
+#define DT_NULL     0xA
+#define DT_TSSBUSY  0xB
+#define DT_CALL     0xC
+#define DT_GATE     0xE
+#define DT_TRAP     0xF
 
 #endif /* IDT_H */
