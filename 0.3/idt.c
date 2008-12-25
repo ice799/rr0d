@@ -169,14 +169,3 @@ unsigned long modifie_idt(unsigned int newhandle,unsigned int *idtentry)
   return aux;
 
 }
-
-
-unsigned long read_idt_entry(unsigned int *idtentry)
-{
-  unsigned long aux;
-
-  aux=((unsigned long) (*idtentry) & 0xffff);
-  idtentry++;
-  aux=aux+((unsigned long) (*idtentry) & 0xffff0000);
-  return aux;
-}

@@ -1733,12 +1733,11 @@ int SPY_Dynamic_Exit(void)
   int i;
 
 
-
-  tmpkbd =   (void*)read_idt_entry((unsigned int*)idt_[0]+2*KEYB_INTER);
+  tmpkbd = gd_offset(idt_[0]+2*KEYB_INTER);
 
   for (i=0;i<MAX_INT;i++)
     {
-      tmp_int[i] = (void*)read_idt_entry((unsigned int*)idt_[0]+2*i);
+      tmp_int[i] = gd_offset(idt_[0]+2*i);
     }
 
   /*
