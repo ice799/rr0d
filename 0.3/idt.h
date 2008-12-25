@@ -29,19 +29,19 @@ struct segment_descriptor {
   unsigned base:8;
 };
 
-static inline u32 sd_offset(segment_descriptor *sd) {
+static inline u32 sd_offset(struct segment_descriptor *sd) {
   return (sd->base0 | sd->base >> 24);
 }
 
-static inline u32 sd_limit(segment_descriptor *sd) {
+static inline u32 sd_limit(struct segment_descriptor *sd) {
   return (sd->limit0 | sd->limit1 >> 16);
 }
 
-static inline u32 sd_present(segment_descriptor *sd) {
+static inline u32 sd_present(struct segment_descriptor *sd) {
   return (sd->present);
 }
 
-static inline u32 sd_dpl(sd) {
+static inline u32 sd_dpl(struct segment_descriptor *sd) {
   return (sd->dpl);
 }
 
@@ -56,23 +56,23 @@ struct gate_descriptor {
   unsigned offset1:16;
 };
 
-static inline u32 gd_offset(gd) {
-  return (gd->offset0 | gd->offset >> 16);
+static inline u32 gd_offset(struct gate_descriptor *gd) {
+  return (gd->offset0 | gd->offset1 >> 16);
 }
 
-static inline u32 gd_present(gd) {
+static inline u32 gd_present(struct gate_descriptor *gd) {
   return (gd->present);
 }
 
-static inline u32  gd_dpl(gd) {
+static inline u32  gd_dpl(struct gate_descriptor *gd) {
   return (gd->dpl);
 }
 
-static inline u32 gd_type(gd) {
+static inline u32 gd_type(struct gate_descriptor *gd) {
   return (gd->type);
 }
 
-static inline u32 gd_selector(gd) {
+static inline u32 gd_selector(struct gate_descriptor *gd) {
   return (gd->selector);
 }
 
