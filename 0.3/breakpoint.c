@@ -305,7 +305,7 @@ unsigned char true_byte_bp(unsigned char *ptr)
 int parse_inst(unsigned int selector, unsigned int ptr, insn* my_ins)
 {
        
-  unsigned char tmp[100];
+  char tmp[100];
   int len=0;
   unsigned char *adresse = (unsigned char*)translate_logic_to_linear(selector, ptr);
   
